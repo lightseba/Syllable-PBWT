@@ -14,7 +14,7 @@ using namespace std;
 
 template<class T>
 struct SyllableQuery {
-	static const unsigned long long MOD{-1ull - 58}, BASE{(1ull<<48) - 59};
+	static const unsigned long long MOD{7199999999999999947ull}, BASE{(1ull<<48) - 59};
 	const int B{sizeof(T) * 8};
 	int M{0}, N{0}, n{0};
 	int minSiteL{B * 2 - 1}, minPhysL{0};
@@ -26,7 +26,7 @@ struct SyllableQuery {
 	vector<vector<T>> r;
 	vector<vector<unsigned long long>> h;
 	vector<T> z_;
-	vector<unsigned __int128> xp;
+	vector<unsigned long long> xp;
 	vector<unsigned long long> hz;
 	vector<int> z, up_end, dn_end;
 

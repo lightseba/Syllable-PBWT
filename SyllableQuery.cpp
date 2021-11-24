@@ -1,5 +1,11 @@
 #include "SyllableQuery.h"
 
+template<unsigned long long M>
+constexpr unsigned long long modmul(unsigned long long a, unsigned long long b) {
+	long long ret = a * b - M * (unsigned long long)(1.L / M * a * b);
+	return ret + M * (ret < 0) - M * (ret >= (long long)M);
+}
+
 template<class T>
 int SyllableQuery<T>::precompute(const char* input_file) {
 	ifstream in(input_file);
@@ -100,14 +106,15 @@ int SyllableQuery<T>::precompute(const char* input_file) {
 	// xp[i] = pow(BASE, i) % MOD
 	xp[0] = 1;
 	for (int k = 1; k < n; k++) {
-		xp[k] = xp[k-1] * BASE % MOD;
+		xp[k] = modmul<MOD>(xp[k-1], BASE);
 	}
 
 	// build prefix hashes; h[i][k+1] = hash of x[i][0, k]
 	h.resize(M, vector<unsigned long long>(n + 1));
 	for (int i = 0; i < M; i++) {
 		for (int k = 0; k < n; k++) {
-			h[i][k+1] = (h[i][k] + xp[k] * (x[i][k] + 1)) % MOD;
+			h[i][k+1] = h[i][k] + modmul<MOD>(xp[k], (x[i][k] + 1));
+			if (h[i][k+1] >= MOD) h[i][k+1] -= MOD;
 		}
 	}
 
@@ -181,14 +188,15 @@ int SyllableQuery<T>::load(const char* load_file) {
 	xp.resize(n), hz.resize(n + 1), up_end.resize(n + 1), dn_end.resize(n + 1), z_.resize(n), z.resize(n);
 	xp[0] = 1;
 	for (int i = 1; i < n; i++) {
-		xp[i] = xp[i - 1] * BASE % MOD;
+		xp[i] = modmul<MOD>(xp[i - 1], BASE);
 	}
 	x.resize(M + 1, vector<int>(n));
 	h.resize(M, vector<unsigned long long>(n + 1));
 	for (int i = 0; i < M; i++) {
 		for (int j = 0; j < n; j++) {
 			if (!in.read((char*) &x[i][j], sizeof(int))) return 2;
-			h[i][j+1] = (h[i][j] + xp[j] * (x[i][j] + 1)) % MOD;
+			h[i][j+1] = h[i][j] + modmul<MOD>(xp[j], (x[i][j] + 1));
+			if (h[i][j+1] >= MOD) h[i][j+1] -= MOD;
 		}
 	}
 	r.resize(n);
@@ -348,7 +356,8 @@ int SyllableQuery<T>::query(const char* query_file, const char* output_file, con
 			z_[k] = Z[k][q];
 			z[k] = lower_bound(r[k].begin(), r[k].end(), z_[k]) - r[k].begin(); // binary search for compressed syllable value
 			if (z[k] < (int) r[k].size() && z_[k] != r[k][z[k]]) z[k] = r[k].size(); // assign unique value if unique raw value
-			hz[k+1] = (hz[k] + xp[k] * (z[k] + 1)) % MOD;
+			hz[k+1] = hz[k] + modmul<MOD>(xp[k], z[k] + 1);
+			if (hz[k+1] >= MOD) hz[k+1] -= MOD;
 		}
 		// up_end[k] = # matches (above the query) that end at syllable k, dn_end[k] = ... below ... (above/below refer to positions in a[k])
 		memset(&up_end[1], 0, n * sizeof(int));
@@ -567,7 +576,8 @@ int SyllableQuery<T>::query(const char* query_file, const char* output_file, con
 			z_[k] = Z[k][q];
 			z[k] = lower_bound(r[k].begin(), r[k].end(), z_[k]) - r[k].begin();
 			if (z[k] < (int) r[k].size() && z_[k] != r[k][z[k]]) z[k] = r[k].size();
-			hz[k+1] = (hz[k] + xp[k] * (z[k] + 1)) % MOD;
+			hz[k+1] = hz[k] + modmul<MOD>(xp[k], z[k] + 1);
+			if (hz[k+1] >= MOD) hz[k+1] -= MOD;
 		}
 		memset(&up_end[1], 0, n * sizeof(int));
 		memset(&dn_end[1], 0, n * sizeof(int));
